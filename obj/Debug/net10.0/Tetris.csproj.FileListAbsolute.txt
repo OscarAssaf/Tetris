@@ -1,0 +1,14 @@
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\bin\Debug\net10.0\Tetris.exe
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\bin\Debug\net10.0\Tetris.deps.json
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\bin\Debug\net10.0\Tetris.runtimeconfig.json
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\bin\Debug\net10.0\Tetris.dll
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\bin\Debug\net10.0\Tetris.pdb
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.AssemblyInfoInputs.cache
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.AssemblyInfo.cs
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.csproj.CoreCompileInputs.cache
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.dll
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\refint\Tetris.dll
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.pdb
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\Tetris.genruntimeconfig.cache
+C:\Users\asoso\OneDrive\Dokument\GitHub\Tetris\obj\Debug\net10.0\ref\Tetris.dll
