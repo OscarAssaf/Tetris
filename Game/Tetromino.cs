@@ -1,5 +1,5 @@
 //    https://tetris.fandom.com/wiki/Tetris_Guideline to know what shape represent the letter
-namespace BlazorTetris.Game;
+namespace Tetris.Game;
 
 public enum TetrominoType
 {
