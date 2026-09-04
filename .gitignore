@@ -1,0 +1,13 @@
+## .NET files
+bin/
+obj/
+
+## IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+
+## OS files
+.DS_Store
+Thumbs.db
