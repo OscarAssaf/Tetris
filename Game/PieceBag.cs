@@ -1,10 +1,6 @@
-Tetris.Game;
+namespace Tetris.Game;
 
-/// <summary>
-/// Implements the standard "7-bag" randomizer: each of the 7 tetromino
-/// types appears exactly once per shuffled bag before the bag refills.
-/// This avoids long droughts of any one piece, matching modern Tetris games.
-/// </summary>
+//https://www.gameslearningsociety.org/what-is-the-7-bag-rule-in-tetris/
 public class PieceBag
 {
     private readonly Random _random;

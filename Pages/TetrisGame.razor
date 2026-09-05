@@ -1,0 +1,299 @@
+@page "/"
+@using Tetris.Game
+@implements IDisposable
+
+<PageTitle>Tetris</PageTitle>
+
+<div class="tetris-app" tabindex="0" @ref="_gameContainer" @onkeydown="HandleKeyDown" @onkeydown:preventDefault="true">
+
+    <h1>Tetris</h1>
+
+    <div class="game-layout">
+
+        <div class="side-panel">
+            <div class="panel-box">
+                <div class="panel-label">Hold</div>
+                <div class="mini-grid">
+                    @RenderMiniPiece(_board.HoldType)
+                </div>
+            </div>
+
+            <div class="panel-box">
+                <div class="panel-label">Score</div>
+                <div class="panel-value">@_board.Score</div>
+            </div>
+
+            <div class="panel-box">
+                <div class="panel-label">Lines</div>
+                <div class="panel-value">@_board.Lines</div>
+            </div>
+
+            <div class="panel-box">
+                <div class="panel-label">Level</div>
+                <div class="panel-value">@_board.Level</div>
+            </div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" style="grid-template-columns: repeat(@GameBoard.Width, 1fr); grid-template-rows: repeat(@GameBoard.Height, 1fr);">
+                @for (int r = 0; r < GameBoard.Height; r++)
+                {
+                    for (int c = 0; c < GameBoard.Width; c++)
+                    {
+                        var cellColor = GetCellColor(r, c);
+                        var isGhost = IsGhostCell(r, c);
+                        <div class="cell @(cellColor is not null ? "filled" : "") @(isGhost ? "ghost" : "")"
+                             style="@(cellColor is not null ? $"background:{cellColor};" : "")">
+                        </div>
+                    }
+                }
+            </div>
+
+            @if (_board.IsGameOver)
+            {
+                <div class="overlay">
+                    <div class="overlay-card">
+                        <h2>Game Over</h2>
+                        <p>Score: @_board.Score</p>
+                        <button class="btn" @onclick="RestartGame">Play Again</button>
+                    </div>
+                </div>
+            }
+            else if (!_started)
+            {
+                <div class="overlay">
+                    <div class="overlay-card">
+                        <h2>Tetris</h2>
+                        <p>Arrow keys to move &amp; rotate<br/>Space to hard drop &middot; C to hold &middot; P to pause</p>
+                        <button class="btn" @onclick="StartGame">Start Game</button>
+                    </div>
+                </div>
+            }
+            else if (_board.IsPaused)
+            {
+                <div class="overlay">
+                    <div class="overlay-card">
+                        <h2>Paused</h2>
+                        <button class="btn" @onclick="TogglePause">Resume</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-box">
+                <div class="panel-label">Next</div>
+                <div class="mini-grid">
+                    @RenderMiniPiece(_board.NextType)
+                </div>
+            </div>
+
+            <div class="panel-box controls-help">
+                <div class="panel-label">Controls</div>
+                <ul>
+                    <li>&larr; &rarr; Move</li>
+                    <li>&uarr; Rotate</li>
+                    <li>&darr; Soft drop</li>
+                    <li>Space Hard drop</li>
+                    <li>C Hold</li>
+                    <li>P Pause</li>
+                </ul>
+            </div>
+
+            <button class="btn btn-small" @onclick="TogglePause" disabled="@(!_started || _board.IsGameOver)">
+                @(_board.IsPaused ? "Resume" : "Pause")
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private GameBoard _board = new();
+    private System.Threading.Timer? _timer;
+    private ElementReference _gameContainer;
+    private bool _started;
+    private int _currentIntervalMs;
+
+    protected override void OnInitialized()
+    {
+        _board.OnChanged += HandleBoardChanged;
+        _board.OnGameOver += HandleGameOver;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _gameContainer.FocusAsync();
+        }
+    }
+
+    private void StartGame()
+    {
+        _started = true;
+        _board.Reset();
+        StartTimer();
+        StateHasChanged();
+    }
+
+    private void RestartGame()
+    {
+        _board.Reset();
+        StartTimer();
+        StateHasChanged();
+    }
+
+    private void TogglePause()
+    {
+        if (!_started || _board.IsGameOver) return;
+        _board.IsPaused = !_board.IsPaused;
+        StateHasChanged();
+    }
+
+    private void StartTimer()
+    {
+        _timer?.Dispose();
+        _currentIntervalMs = _board.GetDropIntervalMs();
+        _timer = new System.Threading.Timer(_ =>
+        {
+            _board.Tick();
+            // If level changed, the tick speed should change too; restart if needed.
+            var newInterval = _board.GetDropIntervalMs();
+            if (newInterval != _currentIntervalMs)
+            {
+                _currentIntervalMs = newInterval;
+                _timer?.Change(_currentIntervalMs, _currentIntervalMs);
+            }
+        }, null, _currentIntervalMs, _currentIntervalMs);
+    }
+
+    private void HandleBoardChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleGameOver()
+    {
+        _timer?.Dispose();
+        _timer = null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!_started || _board.IsGameOver) return;
+
+        if (e.Key is "p" or "P")
+        {
+            TogglePause();
+            return;
+        }
+
+        if (_board.IsPaused) return;
+
+        switch (e.Key)
+        {
+            case "ArrowLeft":
+                _board.MoveLeft();
+                break;
+            case "ArrowRight":
+                _board.MoveRight();
+                break;
+            case "ArrowUp":
+                _board.Rotate();
+                break;
+            case "ArrowDown":
+                _board.SoftDrop();
+                break;
+            case " ":
+            case "Spacebar":
+                _board.HardDrop();
+                break;
+            case "c":
+            case "C":
+                _board.HoldPiece();
+                break;
+        }
+    }
+
+    private string? GetCellColor(int row, int col)
+    {
+        // Locked cells take priority
+        var locked = _board.Grid[row, col];
+        if (locked is not null) return locked;
+
+        // Then the active falling piece
+        if (_board.Current is not null)
+        {
+            foreach (var (r, c) in _board.Current.GetAbsoluteCells())
+            {
+                if (r == row && c == col)
+                {
+                    return Tetromino.GetColorHex(_board.Current.Type);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private bool IsGhostCell(int row, int col)
+    {
+        if (_board.Current is null || _board.IsGameOver) return false;
+        if (GetCellColor(row, col) is not null) return false;
+
+        int ghostRow = _board.GetGhostRow();
+        foreach (var (r, c) in _board.Current.GetAbsoluteCellsFor(_board.Current.Rotation, ghostRow, _board.Current.Col))
+        {
+            if (r == row && c == col) return true;
+        }
+        return false;
+    }
+
+    private RenderFragment RenderMiniPiece(TetrominoType? type) => builder =>
+    {
+        if (type is null)
+        {
+            return;
+        }
+
+        var cells = Tetromino.GetCells(type.Value, 0).ToList();
+        int minR = cells.Min(c => c.row);
+        int maxR = cells.Max(c => c.row);
+        int minC = cells.Min(c => c.col);
+        int maxC = cells.Max(c => c.col);
+        int h = maxR - minR + 1;
+        int w = maxC - minC + 1;
+        string color = Tetromino.GetColorHex(type.Value);
+
+        int seq = 0;
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "mini-piece-grid");
+        builder.AddAttribute(seq++, "style", $"grid-template-columns: repeat({w}, 1fr); grid-template-rows: repeat({h}, 1fr);");
+
+        for (int r = 0; r < h; r++)
+        {
+            for (int c = 0; c < w; c++)
+            {
+                bool filled = cells.Any(cell => cell.row - minR == r && cell.col - minC == c);
+                builder.OpenElement(seq++, "div");
+                builder.AddAttribute(seq++, "class", "mini-cell");
+                if (filled)
+                {
+                    builder.AddAttribute(seq++, "style", $"background:{color};");
+                }
+                builder.CloseElement();
+            }
+        }
+
+        builder.CloseElement();
+    };
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        _board.OnChanged -= HandleBoardChanged;
+        _board.OnGameOver -= HandleGameOver;
+    }
+}
