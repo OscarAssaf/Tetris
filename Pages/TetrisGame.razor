@@ -90,8 +90,6 @@
             }
         </div>
 
-        @if (_leaderboardEnabled)
-        {
         <div class="side-panel">
             <div class="panel-box">
                 <div class="panel-label">Next</div>
@@ -116,8 +114,9 @@
                 @(_board.IsPaused ? "Resume" : "Pause")
             </button>
         </div>
-        }
-
+        
+        @if (_leaderboardEnabled)
+        {
         <div class="side-panel">
             <div class="panel-box leaderboard">
                 <div class="panel-label">Leaderboard</div>
@@ -140,6 +139,7 @@
                 }
             </div>
         </div>
+        }
 
     </div>
 </div>
