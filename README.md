@@ -2,6 +2,8 @@
 
 A complete Tetris game built with Blazor WebAssembly, .NET 10 and C#. 
 
+The project also includes an ASP.NET Core Web API for a SQL Server-backed leaderboard.
+
 The project was designed to be hosted for free utilizing GitHub Pages and can be played on over at the deployed page https://oscarassaf.github.io/Tetris
 
 ## Features
@@ -40,6 +42,29 @@ For hot-reload during development:
 ```bash
 dotnet watch
 ```
+
+### Run the leaderboard API and SQL Server
+
+Start SQL Server 2022 in Docker:
+
+```bash
+docker compose up -d
+```
+
+In another terminal, start the API (it creates the scores table on startup):
+
+```bash
+dotnet run --project Tetris.Api/Tetris.Api.csproj --urls http://localhost:5080
+```
+
+Start the Blazor app in Development on the configured local origin (PowerShell):
+
+```bash
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run --no-launch-profile --urls http://localhost:5140
+```
+
+The API provides `GET /api/scores` and `POST /api/scores`. The leaderboard is enabled in Development and disabled in Production, so the GitHub Pages build hides it and makes no API requests. To test the leaderboard locally, run the Blazor app in Development with the API and SQL Server running. To use a deployed API later, set `Leaderboard:Enabled` to `true` and configure its public HTTPS base URL as `Leaderboard:ApiBaseUrl` in `wwwroot/appsettings.Production.json`, then allow the GitHub Pages origin in the API's CORS settings. The local connection string and SQL password are for development only.
 
 ## Project structure
 

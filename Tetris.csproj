@@ -15,6 +15,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Tetris.Api/**/*.cs" />
+    <Compile Remove="Tetris.Api/**/**/*.cs" />
+    <Content Remove="Tetris.Api/**" />
+    <Content Remove="Tetris.Api/**/**/*" />
+    <None Remove="Tetris.Api/**" />
+    <None Remove="Tetris.Api/**/**/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Tetris.Tests/**/*.cs" />
   </ItemGroup>
 

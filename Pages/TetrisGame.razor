@@ -4,7 +4,7 @@
 
 <PageTitle>Tetris</PageTitle>
 
-<div class="tetris-app" tabindex="0" @ref="_gameContainer" @onkeydown="HandleKeyDown" @onkeydown:preventDefault="true">
+<div class="tetris-app" tabindex="0" @ref="_gameContainer" @onkeydown="HandleKeyDown">
 
     <h1>Tetris</h1>
 
@@ -32,6 +32,16 @@
                 <div class="panel-label">Level</div>
                 <div class="panel-value">@_board.Level</div>
             </div>
+
+            @if (_leaderboardEnabled && _board.IsGameOver)
+            {
+                <div class="panel-box score-submit">
+                    <label class="panel-label" for="player-name">Save your score</label>
+                    <input id="player-name" maxlength="24" @bind="_playerName" placeholder="Your name" @onkeydown:stopPropagation="true" />
+                    <button class="btn btn-small" @onclick="SubmitScoreAsync" disabled="@_isSubmitting">@(_isSubmitting ? "Saving…" : "Save score")</button>
+                    @if (_submitMessage is not null) { <p role="status">@_submitMessage</p> }
+                </div>
+            }
         </div>
 
         <div class="board-wrapper">
@@ -80,6 +90,8 @@
             }
         </div>
 
+        @if (_leaderboardEnabled)
+        {
         <div class="side-panel">
             <div class="panel-box">
                 <div class="panel-label">Next</div>
@@ -104,21 +116,110 @@
                 @(_board.IsPaused ? "Resume" : "Pause")
             </button>
         </div>
+        }
+
+        <div class="side-panel">
+            <div class="panel-box leaderboard">
+                <div class="panel-label">Leaderboard</div>
+                @if (_scores is null)
+                {
+                    <p>@(_scoresError ?? "Loading scores…")</p>
+                }
+                else if (_scores.Count == 0)
+                {
+                    <p>No scores yet.</p>
+                }
+                else
+                {
+                    <ol>
+                        @foreach (var score in _scores)
+                        {
+                            <li><span>@score.PlayerName</span><strong>@score.Points</strong></li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
 
     </div>
 </div>
 
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
     private GameBoard _board = new();
     private System.Threading.Timer? _timer;
     private ElementReference _gameContainer;
     private bool _started;
     private int _currentIntervalMs;
+    private List<ScoreResponse>? _scores;
+    private string? _scoresError;
+    private string? _submitMessage;
+    private string _playerName = "";
+    private bool _isSubmitting;
+    private bool _leaderboardEnabled;
+    private string ApiBaseUrl => new Uri(Http.BaseAddress!, "api/").ToString();
+
+    private sealed record ScoreResponse(int Id, string PlayerName, int Points, DateTime CreatedAtUtc);
 
     protected override void OnInitialized()
     {
         _board.OnChanged += HandleBoardChanged;
         _board.OnGameOver += HandleGameOver;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _leaderboardEnabled = Configuration.GetValue<bool>("Leaderboard:Enabled");
+        if (_leaderboardEnabled)
+        {
+            await LoadScoresAsync();
+        }
+    }
+
+    private async Task LoadScoresAsync()
+    {
+        try
+        {
+            _scores = await Http.GetFromJsonAsync<List<ScoreResponse>>($"{ApiBaseUrl}scores");
+            _scoresError = null;
+        }
+        catch (HttpRequestException)
+        {
+            _scoresError = "The leaderboard is unavailable right now.";
+        }
+    }
+
+    private async Task SubmitScoreAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_playerName))
+        {
+            _submitMessage = "Please enter your name first.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _submitMessage = null;
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"{ApiBaseUrl}scores", new { PlayerName = _playerName, Points = _board.Score });
+            if (!response.IsSuccessStatusCode)
+            {
+                _submitMessage = "The score could not be saved.";
+                return;
+            }
+
+            _submitMessage = "Score saved!";
+            await LoadScoresAsync();
+        }
+        catch (HttpRequestException)
+        {
+            _submitMessage = "The API could not be reached.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
